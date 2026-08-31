@@ -10,7 +10,7 @@ RandomLang procesa el código mediante varias etapas:
 
 Código fuente → Tokenizer → Tokens → Parser → AST → Intérprete
 
-Características actuales
+# Características actuales
 
 - Variables mediante "guardar"
 - Mostrar valores mediante "mostrar"
@@ -32,12 +32,12 @@ Características actuales
 - Bloques mediante indentación
 - "sino"
 
-Para ejecutar código, ejecuta:
 
+Para ejecutar código, ejecuta:
 python main.py
 
 
-Estructura:
+# Estructura:
 
 RandomLang/
 ├── main.py
@@ -46,7 +46,7 @@ RandomLang/
 ├── interpreter.py
 └── programa.rl
 
-Futuras características
+# Futuras características:
 
 - Bucles "repetir"
 - Bucles "mientras"
