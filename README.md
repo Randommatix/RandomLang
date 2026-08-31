@@ -33,18 +33,10 @@ Código fuente → Tokenizer → Tokens → Parser → AST → Intérprete
 - "sino"
 
 
+
 Para ejecutar código, ejecuta:
 python main.py
 
-
-# Estructura:
-
-RandomLang/
-├── main.py
-├── tokenizer.py
-├── parser.py
-├── interpreter.py
-└── programa.rl
 
 # Futuras características:
 
