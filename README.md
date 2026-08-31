@@ -32,21 +32,7 @@ Características actuales
 - Bloques mediante indentación
 - "sino"
 
-Ejemplo:
-
-=================
-guardar x = 10
-guardar y = 5
-
-guardar resultado = (x + y) * 2
-
-si resultado > 20:
-    mostrar resultado
-sino:
-    mostrar 0
-=================
-
-Para ejecutar, ejecuta:
+Para ejecutar código, ejecuta:
 
 python main.py
 
