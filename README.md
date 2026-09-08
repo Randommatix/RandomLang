@@ -31,6 +31,11 @@ Código fuente → Tokenizer → Tokens → Parser → AST → Intérprete
   - "!="
 - Bloques mediante indentación
 - "sino"
+- Strings compatibles:
+  - mostrar
+  - guardar
+- Meter variables en strings usando /variable/
+
 
 
 
