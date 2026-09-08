@@ -48,7 +48,6 @@ python main.py
 - Bucles "repetir"
 - Bucles "mientras"
 - Funciones
-- Texto y cadenas
 - Booleanos
 - Comentarios
 - Listas
