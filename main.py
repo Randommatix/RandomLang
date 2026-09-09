@@ -1,36 +1,123 @@
+import os
 from tokenizer import tokenize
 from parser import Parser
 from interpreter import Interpreter
 
 
 # ==========================
-# LEER PROGRAMA
+# CONFIGURACIÓN
 # ==========================
 
-with open("programa.rl", "r", encoding="utf-8") as archivo:
-    codigo = archivo.read()
-
-
-# ==========================
-# TOKENIZER
-# ==========================
-
-tokens = tokenize(codigo)
+CARPETA_PROGRAMAS = "Programas"
 
 
 # ==========================
-# PARSER
+# EJECUTAR PROGRAMA
 # ==========================
 
-parser = Parser(tokens)
+def ejecutar_programa(nombre):
 
-ast = parser.parsear()
+    if nombre.endswith(".rl"):
+
+        nombre = nombre[:-3]
+
+
+    ruta = os.path.join(
+        CARPETA_PROGRAMAS,
+        nombre + ".rl"
+    )
+
+
+    if not os.path.isfile(ruta):
+
+        print(
+            f"No existe el programa '{nombre}'."
+        )
+
+        return
+
+
+    try:
+
+        # ==========================
+        # LEER PROGRAMA
+        # ==========================
+
+        with open(
+            ruta,
+            "r",
+            encoding="utf-8"
+        ) as archivo:
+
+            codigo = archivo.read()
+
+
+        # ==========================
+        # TOKENIZER
+        # ==========================
+
+        tokens = tokenize(codigo)
+
+
+        # ==========================
+        # PARSER
+        # ==========================
+
+        parser = Parser(tokens)
+
+        ast = parser.parsear()
+
+
+        # ==========================
+        # INTÉRPRETE
+        # ==========================
+
+        interpreter = Interpreter()
+
+        interpreter.ejecutar(ast)
+
+
+    except Exception as error:
+
+        print(
+            f"Error al ejecutar '{nombre}':"
+        )
+
+        print(error)
 
 
 # ==========================
-# INTÉRPRETE
+# CONSOLA RANDOMLANG
 # ==========================
 
-interpreter = Interpreter()
+print("=== RANDOMLANG ===")
+print(
+    "Escribe el nombre de un programa para ejecutarlo."
+)
+print(
+    "Los programas se encuentran en la carpeta 'Programas/'."
+)
+print(
+    "Escribe 'salir' para cerrar."
+)
+print()
 
-interpreter.ejecutar(ast)
+
+while True:
+
+    nombre = input("RandomLang> ").strip()
+
+
+    if nombre.lower() == "salir":
+
+        print("Hasta luego.")
+
+        break
+
+
+    if nombre == "":
+
+        continue
+
+
+    ejecutar_programa(nombre)
