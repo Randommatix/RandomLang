@@ -1,3 +1,6 @@
+import random
+
+
 from parser import (
     GuardarVariable,
     Mostrar,
@@ -6,7 +9,9 @@ from parser import (
     Variable,
     Operacion,
     Si,
-    Comparacion
+    Comparacion,
+    Mientras,
+    LlamadaFuncion
 )
 
 
@@ -24,47 +29,28 @@ class Interpreter:
             self.ejecutar_nodo(nodo)
 
 
-    # ==========================
-    # EJECUTAR NODO
-    # ==========================
-
     def ejecutar_nodo(self, nodo):
-
-        # ==========================
-        # GUARDAR VARIABLE
-        # ==========================
 
         if isinstance(nodo, GuardarVariable):
 
-            valor = self.evaluar(
-                nodo.valor
-            )
+            valor = self.evaluar(nodo.valor)
 
             self.variables[nodo.nombre] = valor
 
 
-        # ==========================
-        # MOSTRAR
-        # ==========================
-
         elif isinstance(nodo, Mostrar):
 
-            valor = self.evaluar(
-                nodo.valor
-            )
+            valor = self.evaluar(nodo.valor)
 
             print(valor)
 
-
-        # ==========================
-        # SI
-        # ==========================
 
         elif isinstance(nodo, Si):
 
             condicion = self.evaluar(
                 nodo.condicion
             )
+
 
             if condicion:
 
@@ -73,6 +59,7 @@ class Interpreter:
                     self.ejecutar_nodo(
                         instruccion
                     )
+
 
             elif nodo.bloque_sino is not None:
 
@@ -83,9 +70,16 @@ class Interpreter:
                     )
 
 
-        # ==========================
-        # NODO DESCONOCIDO
-        # ==========================
+        elif isinstance(nodo, Mientras):
+
+            while self.evaluar(nodo.condicion):
+
+                for instruccion in nodo.bloque:
+
+                    self.ejecutar_nodo(
+                        instruccion
+                    )
+
 
         else:
 
@@ -94,21 +88,14 @@ class Interpreter:
             )
 
 
-    # ==========================
-    # INTERPOLAR STRING
-    # ==========================
-
     def interpolar_string(self, texto):
 
         resultado = ""
 
         i = 0
 
-        while i < len(texto):
 
-            # ==========================
-            # COMIENZO DE VARIABLE
-            # ==========================
+        while i < len(texto):
 
             if texto[i] == "\\":
 
@@ -117,8 +104,6 @@ class Interpreter:
                 i += 1
 
 
-                # Buscar la segunda barra
-
                 while (
                     i < len(texto)
                     and texto[i] != "\\"
@@ -126,8 +111,6 @@ class Interpreter:
 
                     i += 1
 
-
-                # No se encontró la barra final
 
                 if i >= len(texto):
 
@@ -141,15 +124,10 @@ class Interpreter:
                 ]
 
 
-                # ==========================
-                # COMPROBAR VARIABLE
-                # ==========================
-
                 if nombre not in self.variables:
 
                     raise Exception(
-                        f"La variable '{nombre}' "
-                        f"no existe"
+                        f"La variable '{nombre}' no existe"
                     )
 
 
@@ -165,10 +143,6 @@ class Interpreter:
                 continue
 
 
-            # ==========================
-            # CARÁCTER NORMAL
-            # ==========================
-
             resultado += texto[i]
 
             i += 1
@@ -177,24 +151,12 @@ class Interpreter:
         return resultado
 
 
-    # ==========================
-    # EVALUAR
-    # ==========================
-
     def evaluar(self, nodo):
-
-        # ==========================
-        # NÚMERO
-        # ==========================
 
         if isinstance(nodo, Numero):
 
             return nodo.valor
 
-
-        # ==========================
-        # TEXTO
-        # ==========================
 
         elif isinstance(nodo, Texto):
 
@@ -203,27 +165,19 @@ class Interpreter:
             )
 
 
-        # ==========================
-        # VARIABLE
-        # ==========================
-
         elif isinstance(nodo, Variable):
 
             if nodo.nombre not in self.variables:
 
                 raise Exception(
-                    f"La variable '{nodo.nombre}' "
-                    f"no existe"
+                    f"La variable '{nodo.nombre}' no existe"
                 )
+
 
             return self.variables[
                 nodo.nombre
             ]
 
-
-        # ==========================
-        # OPERACIÓN MATEMÁTICA
-        # ==========================
 
         elif isinstance(nodo, Operacion):
 
@@ -263,10 +217,6 @@ class Interpreter:
                     f"{nodo.operador}"
                 )
 
-
-        # ==========================
-        # COMPARACIÓN
-        # ==========================
 
         elif isinstance(nodo, Comparacion):
 
@@ -312,17 +262,79 @@ class Interpreter:
             else:
 
                 raise Exception(
-                    f"Operador de comparación "
+                    "Operador de comparación "
                     f"desconocido: {nodo.operador}"
                 )
 
 
-        # ==========================
-        # NODO NO EVALUABLE
-        # ==========================
+        elif isinstance(nodo, LlamadaFuncion):
+
+            return self.ejecutar_funcion(
+                nodo
+            )
+
 
         else:
 
             raise Exception(
                 f"No se puede evaluar: {nodo}"
+            )
+
+
+    def ejecutar_funcion(self, nodo):
+
+        if nodo.nombre == "aleatorio":
+
+            if len(nodo.argumentos) != 2:
+
+                raise Exception(
+                    "aleatorio() necesita exactamente "
+                    "2 argumentos"
+                )
+
+
+            minimo = self.evaluar(
+                nodo.argumentos[0]
+            )
+
+            maximo = self.evaluar(
+                nodo.argumentos[1]
+            )
+
+
+            if not isinstance(minimo, int):
+
+                raise Exception(
+                    "El primer argumento de "
+                    "aleatorio() debe ser un número entero"
+                )
+
+
+            if not isinstance(maximo, int):
+
+                raise Exception(
+                    "El segundo argumento de "
+                    "aleatorio() debe ser un número entero"
+                )
+
+
+            if minimo > maximo:
+
+                raise Exception(
+                    "El mínimo de aleatorio() "
+                    "no puede ser mayor que el máximo"
+                )
+
+
+            return random.randint(
+                minimo,
+                maximo
+            )
+
+
+        else:
+
+            raise Exception(
+                f"Función desconocida: "
+                f"{nodo.nombre}"
             )
