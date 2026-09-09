@@ -49,16 +49,12 @@ def tokenizar_linea(linea, tokens):
                 i += 1
 
 
-            # No se encontró la comilla final
-
             if i >= len(linea):
 
                 raise Exception(
                     "String sin cerrar"
                 )
 
-
-            # Saltar la comilla final
 
             i += 1
 
@@ -102,7 +98,9 @@ def tokenizar_linea(linea, tokens):
 
                 "si": "SI",
 
-                "sino": "SINO"
+                "sino": "SINO",
+
+                "mientras": "MIENTRAS"
 
             }
 
@@ -235,6 +233,8 @@ def tokenizar_linea(linea, tokens):
             "(": "PAREN_IZQ",
 
             ")": "PAREN_DER",
+
+            ",": "COMA",
 
             ">": "MAYOR",
 
