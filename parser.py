@@ -1,83 +1,85 @@
-class Si:
-    def __init__(
-        self,
-        condicion,
-        bloque_si,
-        bloque_sino=None
-    ):
-        self.condicion = condicion
-        self.bloque_si = bloque_si
-        self.bloque_sino = bloque_sino
+class GuardarVariable:
+
+    def __init__(self, nombre, valor):
+
+        self.nombre = nombre
+        self.valor = valor
+
 
     def __repr__(self):
+
         return (
-            f"Si("
-            f"condicion={self.condicion}, "
-            f"bloque_si={self.bloque_si}, "
-            f"bloque_sino={self.bloque_sino}"
+            f"GuardarVariable("
+            f"{self.nombre}, "
+            f"{self.valor}"
             f")"
         )
 
-class Comparacion:
+
+class Mostrar:
+
+    def __init__(self, valor):
+
+        self.valor = valor
+
+
+    def __repr__(self):
+
+        return f"Mostrar({self.valor})"
+
+
+class Numero:
+
+    def __init__(self, valor):
+
+        self.valor = valor
+
+
+    def __repr__(self):
+
+        return f"Numero({self.valor})"
+
+
+class Texto:
+
+    def __init__(self, valor):
+
+        self.valor = valor
+
+
+    def __repr__(self):
+
+        return f"Texto({self.valor})"
+
+
+class Variable:
+
+    def __init__(self, nombre):
+
+        self.nombre = nombre
+
+
+    def __repr__(self):
+
+        return f"Variable({self.nombre})"
+
+
+class Operacion:
+
     def __init__(
         self,
         izquierda,
         operador,
         derecha
     ):
+
         self.izquierda = izquierda
         self.operador = operador
         self.derecha = derecha
 
-    def __repr__(self):
-        return (
-            f"Comparacion("
-            f"{self.izquierda} "
-            f"{self.operador} "
-            f"{self.derecha}"
-            f")"
-        )
-
-class GuardarVariable:
-    def __init__(self, nombre, valor):
-        self.nombre = nombre
-        self.valor = valor
 
     def __repr__(self):
-        return f"GuardarVariable({self.nombre}, {self.valor})"
 
-
-class Mostrar:
-    def __init__(self, valor):
-        self.valor = valor
-
-    def __repr__(self):
-        return f"Mostrar({self.valor})"
-
-
-class Numero:
-    def __init__(self, valor):
-        self.valor = valor
-
-    def __repr__(self):
-        return f"Numero({self.valor})"
-
-
-class Variable:
-    def __init__(self, nombre):
-        self.nombre = nombre
-
-    def __repr__(self):
-        return f"Variable({self.nombre})"
-
-
-class Operacion:
-    def __init__(self, izquierda, operador, derecha):
-        self.izquierda = izquierda
-        self.operador = operador
-        self.derecha = derecha
-
-    def __repr__(self):
         return (
             f"Operacion("
             f"{self.izquierda} "
@@ -87,148 +89,301 @@ class Operacion:
         )
 
 
+class Si:
+
+    def __init__(
+        self,
+        condicion,
+        bloque_si,
+        bloque_sino=None
+    ):
+
+        self.condicion = condicion
+        self.bloque_si = bloque_si
+        self.bloque_sino = bloque_sino
+
+
+    def __repr__(self):
+
+        return (
+            f"Si("
+            f"condicion={self.condicion}, "
+            f"bloque_si={self.bloque_si}, "
+            f"bloque_sino={self.bloque_sino}"
+            f")"
+        )
+
+
+class Mientras:
+
+    def __init__(
+        self,
+        condicion,
+        bloque
+    ):
+
+        self.condicion = condicion
+        self.bloque = bloque
+
+
+    def __repr__(self):
+
+        return (
+            f"Mientras("
+            f"condicion={self.condicion}, "
+            f"bloque={self.bloque}"
+            f")"
+        )
+
+
+class Comparacion:
+
+    def __init__(
+        self,
+        izquierda,
+        operador,
+        derecha
+    ):
+
+        self.izquierda = izquierda
+        self.operador = operador
+        self.derecha = derecha
+
+
+    def __repr__(self):
+
+        return (
+            f"Comparacion("
+            f"{self.izquierda} "
+            f"{self.operador} "
+            f"{self.derecha}"
+            f")"
+        )
+
+
+class LlamadaFuncion:
+
+    def __init__(
+        self,
+        nombre,
+        argumentos
+    ):
+
+        self.nombre = nombre
+        self.argumentos = argumentos
+
+
+    def __repr__(self):
+
+        return (
+            f"LlamadaFuncion("
+            f"{self.nombre}, "
+            f"{self.argumentos}"
+            f")"
+        )
+
+
 class Parser:
 
     def __init__(self, tokens):
+
         self.tokens = tokens
         self.posicion = 0
 
 
     def actual(self):
 
-        if self.posicion < len(self.tokens):
-            return self.tokens[self.posicion]
+        if self.posicion >= len(self.tokens):
 
-        return None
+            return None
+
+        return self.tokens[
+            self.posicion
+        ]
 
 
     def avanzar(self):
+
         self.posicion += 1
 
 
-    def esperar(self, tipo):
-
-        token = self.actual()
-
-        if token is None or token.tipo != tipo:
-            raise Exception(
-                f"Se esperaba {tipo}, "
-                f"pero se encontró {token}"
-            )
-
-        self.avanzar()
-
-        return token
-
-
-    # ==========================
-    # PROGRAMA
-    # ==========================
-
     def parsear(self):
 
-        programa = []
+        instrucciones = []
+
 
         while self.actual() is not None:
 
-            # Ignorar saltos de línea
             if self.actual().tipo == "NUEVA_LINEA":
+
                 self.avanzar()
+
                 continue
 
-            programa.append(
+
+            instrucciones.append(
                 self.parsear_instruccion()
             )
 
-        return programa
 
+        return instrucciones
 
-    # ==========================
-    # INSTRUCCIÓN
-    # ==========================
 
     def parsear_instruccion(self):
 
         token = self.actual()
 
+
         if token.tipo == "GUARDAR":
+
             return self.parsear_guardar()
 
+
         elif token.tipo == "MOSTRAR":
+
             return self.parsear_mostrar()
 
+
         elif token.tipo == "SI":
+
             return self.parsear_si()
 
+
+        elif token.tipo == "MIENTRAS":
+
+            return self.parsear_mientras()
+
+
         else:
+
             raise Exception(
                 f"Instrucción inesperada: {token}"
             )
 
 
-    # ==========================
-    # GUARDAR
-    # ==========================
-
     def parsear_guardar(self):
 
         self.avanzar()
 
-        nombre = self.esperar("IDENTIFICADOR")
 
-        self.esperar("IGUAL")
+        if self.actual().tipo != "IDENTIFICADOR":
+
+            raise Exception(
+                "Se esperaba un identificador después de 'guardar'"
+            )
+
+
+        nombre = self.actual().valor
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "IGUAL":
+
+            raise Exception(
+                "Se esperaba '=' después del identificador"
+            )
+
+
+        self.avanzar()
+
 
         valor = self.parsear_expresion()
 
-        self.esperar("NUEVA_LINEA")
+
+        if self.actual().tipo != "NUEVA_LINEA":
+
+            raise Exception(
+                "Se esperaba NUEVA_LINEA después de la expresión"
+            )
+
+
+        self.avanzar()
+
 
         return GuardarVariable(
-            nombre.valor,
+            nombre,
             valor
         )
 
-
-    # ==========================
-    # MOSTRAR
-    # ==========================
 
     def parsear_mostrar(self):
 
         self.avanzar()
 
+
         valor = self.parsear_expresion()
 
-        self.esperar("NUEVA_LINEA")
 
-        return Mostrar(valor)
+        if self.actual().tipo != "NUEVA_LINEA":
+
+            raise Exception(
+                "Se esperaba NUEVA_LINEA después de 'mostrar'"
+            )
 
 
-    # ==========================
-    # SI / SINO
-    # ==========================
+        self.avanzar()
+
+
+        return Mostrar(
+            valor
+        )
+
 
     def parsear_si(self):
 
-        # Saltar SI
         self.avanzar()
+
 
         condicion = self.parsear_condicion()
 
-        self.esperar("DOS_PUNTOS")
 
-        self.esperar("NUEVA_LINEA")
+        if self.actual().tipo != "DOS_PUNTOS":
 
-        # Inicio del bloque
-        self.esperar("INDENT")
+            raise Exception(
+                "Se esperaba ':' después de la condición"
+            )
+
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "NUEVA_LINEA":
+
+            raise Exception(
+                "Se esperaba NUEVA_LINEA después de ':'"
+            )
+
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "INDENT":
+
+            raise Exception(
+                "Se esperaba INDENT después de 'si'"
+            )
+
+
+        self.avanzar()
+
 
         bloque_si = self.parsear_bloque()
 
-        self.esperar("DEDENT")
+
+        if self.actual().tipo != "DEDENT":
+
+            raise Exception(
+                "Se esperaba DEDENT al terminar el bloque"
+            )
+
+
+        self.avanzar()
 
 
         bloque_sino = None
 
-        # ¿Existe SINO?
+
         if (
             self.actual() is not None
             and self.actual().tipo == "SINO"
@@ -236,15 +391,48 @@ class Parser:
 
             self.avanzar()
 
-            self.esperar("DOS_PUNTOS")
 
-            self.esperar("NUEVA_LINEA")
+            if self.actual().tipo != "DOS_PUNTOS":
 
-            self.esperar("INDENT")
+                raise Exception(
+                    "Se esperaba ':' después de 'sino'"
+                )
+
+
+            self.avanzar()
+
+
+            if self.actual().tipo != "NUEVA_LINEA":
+
+                raise Exception(
+                    "Se esperaba NUEVA_LINEA después de ':'"
+                )
+
+
+            self.avanzar()
+
+
+            if self.actual().tipo != "INDENT":
+
+                raise Exception(
+                    "Se esperaba INDENT después de 'sino'"
+                )
+
+
+            self.avanzar()
+
 
             bloque_sino = self.parsear_bloque()
 
-            self.esperar("DEDENT")
+
+            if self.actual().tipo != "DEDENT":
+
+                raise Exception(
+                    "Se esperaba DEDENT al terminar el bloque"
+                )
+
+
+            self.avanzar()
 
 
         return Si(
@@ -254,13 +442,67 @@ class Parser:
         )
 
 
-    # ==========================
-    # BLOQUE
-    # ==========================
+    def parsear_mientras(self):
+
+        self.avanzar()
+
+
+        condicion = self.parsear_condicion()
+
+
+        if self.actual().tipo != "DOS_PUNTOS":
+
+            raise Exception(
+                "Se esperaba ':' después de la condición"
+            )
+
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "NUEVA_LINEA":
+
+            raise Exception(
+                "Se esperaba NUEVA_LINEA después de ':'"
+            )
+
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "INDENT":
+
+            raise Exception(
+                "Se esperaba INDENT después de 'mientras'"
+            )
+
+
+        self.avanzar()
+
+
+        bloque = self.parsear_bloque()
+
+
+        if self.actual().tipo != "DEDENT":
+
+            raise Exception(
+                "Se esperaba DEDENT al terminar el bloque"
+            )
+
+
+        self.avanzar()
+
+
+        return Mientras(
+            condicion,
+            bloque
+        )
+
 
     def parsear_bloque(self):
 
-        bloque = []
+        instrucciones = []
+
 
         while (
             self.actual() is not None
@@ -268,45 +510,63 @@ class Parser:
         ):
 
             if self.actual().tipo == "NUEVA_LINEA":
+
                 self.avanzar()
+
                 continue
 
-            bloque.append(
+
+            instrucciones.append(
                 self.parsear_instruccion()
             )
 
-        return bloque
 
+        return instrucciones
 
-    # ==========================
-    # CONDICIONES
-    # ==========================
 
     def parsear_condicion(self):
 
         izquierda = self.parsear_expresion()
 
+
+        operadores = {
+
+            "MAYOR": ">",
+
+            "MENOR": "<",
+
+            "MAYOR_IGUAL": ">=",
+
+            "MENOR_IGUAL": "<=",
+
+            "IGUAL_IGUAL": "==",
+
+            "DIFERENTE": "!="
+
+        }
+
+
         token = self.actual()
 
-        operadores = [
-            "MAYOR",
-            "MENOR",
-            "MAYOR_IGUAL",
-            "MENOR_IGUAL",
-            "IGUAL_IGUAL",
-            "DIFERENTE"
-        ]
 
-        if token is None or token.tipo not in operadores:
+        if token.tipo not in operadores:
+
             raise Exception(
-                "Se esperaba un operador de comparación"
+                f"Se esperaba un operador de comparación, "
+                f"pero apareció: {token}"
             )
 
-        operador = token.valor
+
+        operador = operadores[
+            token.tipo
+        ]
+
 
         self.avanzar()
 
+
         derecha = self.parsear_expresion()
+
 
         return Comparacion(
             izquierda,
@@ -315,108 +575,218 @@ class Parser:
         )
 
 
-    # ==========================
-    # EXPRESIONES
-    # ==========================
-
     def parsear_expresion(self):
 
         izquierda = self.parsear_termino()
 
-        while (
-            self.actual() is not None
-            and self.actual().tipo in [
-                "MAS",
-                "MENOS"
-            ]
-        ):
 
-            operador = self.actual().valor
+        while self.actual() is not None:
 
-            self.avanzar()
+            if self.actual().tipo == "MAS":
 
-            derecha = self.parsear_termino()
+                self.avanzar()
 
-            izquierda = Operacion(
-                izquierda,
-                operador,
-                derecha
-            )
+                derecha = self.parsear_termino()
+
+                izquierda = Operacion(
+                    izquierda,
+                    "+",
+                    derecha
+                )
+
+
+            elif self.actual().tipo == "MENOS":
+
+                self.avanzar()
+
+                derecha = self.parsear_termino()
+
+                izquierda = Operacion(
+                    izquierda,
+                    "-",
+                    derecha
+                )
+
+
+            else:
+
+                break
+
 
         return izquierda
 
-
-    # ==========================
-    # * y /
-    # ==========================
 
     def parsear_termino(self):
 
         izquierda = self.parsear_valor()
 
-        while (
-            self.actual() is not None
-            and self.actual().tipo in [
-                "MULTIPLICAR",
-                "DIVIDIR"
-            ]
-        ):
 
-            operador = self.actual().valor
+        while self.actual() is not None:
 
-            self.avanzar()
+            if self.actual().tipo == "MULTIPLICAR":
 
-            derecha = self.parsear_valor()
+                self.avanzar()
 
-            izquierda = Operacion(
-                izquierda,
-                operador,
-                derecha
-            )
+                derecha = self.parsear_valor()
+
+                izquierda = Operacion(
+                    izquierda,
+                    "*",
+                    derecha
+                )
+
+
+            elif self.actual().tipo == "DIVIDIR":
+
+                self.avanzar()
+
+                derecha = self.parsear_valor()
+
+                izquierda = Operacion(
+                    izquierda,
+                    "/",
+                    derecha
+                )
+
+
+            else:
+
+                break
+
 
         return izquierda
 
 
-    # ==========================
-    # VALORES
-    # ==========================
-
     def parsear_valor(self):
 
         token = self.actual()
-
-        if token is None:
-            raise Exception(
-                "Se esperaba un valor"
-            )
 
 
         if token.tipo == "NUMERO":
 
             self.avanzar()
 
-            return Numero(token.valor)
+            return Numero(
+                token.valor
+            )
+
+
+        elif token.tipo == "STRING":
+
+            self.avanzar()
+
+            return Texto(
+                token.valor
+            )
 
 
         elif token.tipo == "IDENTIFICADOR":
 
+            nombre = token.valor
+
             self.avanzar()
 
-            return Variable(token.valor)
+
+            if (
+                self.actual() is not None
+                and self.actual().tipo == "PAREN_IZQ"
+            ):
+
+                return self.parsear_llamada_funcion(
+                    nombre
+                )
+
+
+            return Variable(
+                nombre
+            )
 
 
         elif token.tipo == "PAREN_IZQ":
 
             self.avanzar()
 
+
             expresion = self.parsear_expresion()
 
-            self.esperar("PAREN_DER")
+
+            if self.actual().tipo != "PAREN_DER":
+
+                raise Exception(
+                    "Se esperaba ')'"
+                )
+
+
+            self.avanzar()
+
 
             return expresion
 
 
         else:
+
             raise Exception(
                 f"Valor inesperado: {token}"
             )
+
+
+    def parsear_llamada_funcion(
+        self,
+        nombre
+    ):
+
+        if self.actual().tipo != "PAREN_IZQ":
+
+            raise Exception(
+                "Se esperaba '(' después del nombre de la función"
+            )
+
+
+        self.avanzar()
+
+
+        argumentos = []
+
+
+        if self.actual().tipo == "PAREN_DER":
+
+            self.avanzar()
+
+            return LlamadaFuncion(
+                nombre,
+                argumentos
+            )
+
+
+        argumentos.append(
+            self.parsear_expresion()
+        )
+
+
+        while (
+            self.actual() is not None
+            and self.actual().tipo == "COMA"
+        ):
+
+            self.avanzar()
+
+
+            argumentos.append(
+                self.parsear_expresion()
+            )
+
+
+        if self.actual().tipo != "PAREN_DER":
+
+            raise Exception(
+                "Se esperaba ')' al terminar los argumentos"
+            )
+
+
+        self.avanzar()
+
+
+        return LlamadaFuncion(
+            nombre,
+            argumentos
+        )
