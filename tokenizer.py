@@ -100,7 +100,11 @@ def tokenizar_linea(linea, tokens):
 
                 "sino": "SINO",
 
-                "mientras": "MIENTRAS"
+                "mientras": "MIENTRAS",
+
+                "funcion": "FUNCION",
+
+                "devolver": "DEVOLVER"
 
             }
 
