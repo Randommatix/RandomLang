@@ -44,9 +44,7 @@ Para ejecutar código, ejecuta main.py, y luego preguntara por un nombre de prog
 
 # Futuras características:
 
-- Bucles "repetir"
-- Bucles "mientras"
-- Funciones
+- Funciones(?)
 - Booleanos
 - Comentarios
 - Listas
