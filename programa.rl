@@ -1,7 +1,7 @@
 guardar jugador_vida = 100
-guardar pociones = aleatorio(1, 3)
+guardar pociones = aleatorio(0, 3)
 guardar turno = 1
-guardar monstruo_vida = aleatorio(60, 120)
+guardar monstruo_vida = aleatorio(60, 220)
 
 mostrar "=== ARENA DE MAZMORRAS ==="
 mostrar "Aparece un monstruo con \monstruo_vida\ de vida."
