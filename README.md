@@ -30,17 +30,16 @@ Código fuente → Tokenizer → Tokens → Parser → AST → Intérprete
   - "=="
   - "!="
 - Bloques mediante indentación
-- "sino"
 - Strings compatibles:
   - mostrar
   - guardar
 - Meter variables en strings usando /variable/
+- Bucles usando "mientras"
+- Funcion "aleatorio(valor1, valor2)"
 
 
 
-
-Para ejecutar código, ejecuta:
-python main.py
+Para ejecutar código, ejecuta main.py, y luego preguntara por un nombre de programa. RECUERDA METER programa.rl DENTRO DE UNA CARPETA LLAMADA "Programas"
 
 
 # Futuras características:
