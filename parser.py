@@ -183,6 +183,43 @@ class LlamadaFuncion:
         )
 
 
+class Funcion:
+
+    def __init__(
+        self,
+        nombre,
+        parametros,
+        bloque
+    ):
+
+        self.nombre = nombre
+        self.parametros = parametros
+        self.bloque = bloque
+
+
+    def __repr__(self):
+
+        return (
+            f"Funcion("
+            f"{self.nombre}, "
+            f"parametros={self.parametros}, "
+            f"bloque={self.bloque}"
+            f")"
+        )
+
+
+class Devolver:
+
+    def __init__(self, valor):
+
+        self.valor = valor
+
+
+    def __repr__(self):
+
+        return f"Devolver({self.valor})"
+
+
 class Parser:
 
     def __init__(self, tokens):
@@ -254,11 +291,44 @@ class Parser:
             return self.parsear_mientras()
 
 
-        else:
+        elif token.tipo == "FUNCION":
 
-            raise Exception(
-                f"Instrucción inesperada: {token}"
-            )
+            return self.parsear_funcion()
+
+
+        elif token.tipo == "DEVOLVER":
+
+            return self.parsear_devolver()
+
+
+        elif token.tipo == "IDENTIFICADOR":
+
+            if (
+                self.posicion + 1 < len(self.tokens)
+                and self.tokens[
+                    self.posicion + 1
+                ].tipo == "PAREN_IZQ"
+            ):
+
+                llamada = self.parsear_llamada_funcion()
+
+
+                if self.actual().tipo != "NUEVA_LINEA":
+
+                    raise Exception(
+                        "Se esperaba NUEVA_LINEA después de "
+                        "la llamada a la función"
+                    )
+
+
+                self.avanzar()
+
+                return llamada
+
+
+        raise Exception(
+            f"Instrucción inesperada: {token}"
+        )
 
 
     def parsear_guardar(self):
@@ -327,6 +397,154 @@ class Parser:
 
         return Mostrar(
             valor
+        )
+
+
+    def parsear_devolver(self):
+
+        self.avanzar()
+
+
+        valor = self.parsear_expresion()
+
+
+        if self.actual().tipo != "NUEVA_LINEA":
+
+            raise Exception(
+                "Se esperaba NUEVA_LINEA después de 'devolver'"
+            )
+
+
+        self.avanzar()
+
+
+        return Devolver(
+            valor
+        )
+
+
+    def parsear_funcion(self):
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "IDENTIFICADOR":
+
+            raise Exception(
+                "Se esperaba un nombre después de 'funcion'"
+            )
+
+
+        nombre = self.actual().valor
+
+        self.avanzar()
+
+
+        parametros = []
+
+
+        # ==========================
+        # PARÁMETROS
+        # ==========================
+
+        if self.actual().tipo == "PAREN_IZQ":
+
+            self.avanzar()
+
+
+            if self.actual().tipo != "PAREN_DER":
+
+                if self.actual().tipo != "IDENTIFICADOR":
+
+                    raise Exception(
+                        "Se esperaba un nombre de parámetro"
+                    )
+
+
+                parametros.append(
+                    self.actual().valor
+                )
+
+                self.avanzar()
+
+
+                while self.actual().tipo == "COMA":
+
+                    self.avanzar()
+
+
+                    if self.actual().tipo != "IDENTIFICADOR":
+
+                        raise Exception(
+                            "Se esperaba un nombre de parámetro "
+                            "después de ','"
+                        )
+
+
+                    parametros.append(
+                        self.actual().valor
+                    )
+
+                    self.avanzar()
+
+
+            if self.actual().tipo != "PAREN_DER":
+
+                raise Exception(
+                    "Se esperaba ')' después de los parámetros"
+                )
+
+
+            self.avanzar()
+
+
+        if self.actual().tipo != "DOS_PUNTOS":
+
+            raise Exception(
+                "Se esperaba ':' después de la función"
+            )
+
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "NUEVA_LINEA":
+
+            raise Exception(
+                "Se esperaba NUEVA_LINEA después de ':'"
+            )
+
+
+        self.avanzar()
+
+
+        if self.actual().tipo != "INDENT":
+
+            raise Exception(
+                "Se esperaba INDENT después de 'funcion'"
+            )
+
+
+        self.avanzar()
+
+
+        bloque = self.parsear_bloque()
+
+
+        if self.actual().tipo != "DEDENT":
+
+            raise Exception(
+                "Se esperaba DEDENT al terminar la función"
+            )
+
+
+        self.avanzar()
+
+
+        return Funcion(
+            nombre,
+            parametros,
+            bloque
         )
 
 
@@ -732,8 +950,15 @@ class Parser:
 
     def parsear_llamada_funcion(
         self,
-        nombre
+        nombre=None
     ):
+
+        if nombre is None:
+
+            nombre = self.actual().valor
+
+            self.avanzar()
+
 
         if self.actual().tipo != "PAREN_IZQ":
 
