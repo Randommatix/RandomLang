@@ -7,3 +7,8 @@ sino:
     mostrar 0
 
 mostrar 999
+
+
+guardar git = "GitHub"
+
+mostrar "Hola \git\!"
