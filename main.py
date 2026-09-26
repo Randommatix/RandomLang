@@ -1,5 +1,11 @@
 import os
 import re
+import sys
+import json
+import shlex
+import signal
+import atexit
+import time
 
 from tokenizer import tokenize
 from parser import Parser
@@ -14,35 +20,237 @@ from interpreter import (
 # CONFIGURACIÓN
 # ==========================
 
-CARPETA_PROGRAMAS = "Programas"
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+CARPETA_PROGRAMAS = os.path.join(
+    BASE_DIR,
+    "Programas"
+)
+
+CARPETA_ESTADO = os.path.join(
+    os.path.expanduser("~"),
+    ".randomlang"
+)
+
+ARCHIVO_PROCESOS = os.path.join(
+    CARPETA_ESTADO,
+    "processes.json"
+)
+
+
+# ==========================
+# PROCESOS RANDOMLANG
+# ==========================
+
+PID_ACTUAL = os.getpid()
+
+
+def preparar_estado():
+
+    os.makedirs(
+        CARPETA_ESTADO,
+        exist_ok=True
+    )
+
+    if not os.path.isfile(
+        ARCHIVO_PROCESOS
+    ):
+        with open(
+            ARCHIVO_PROCESOS,
+            "w",
+            encoding="utf-8"
+        ) as archivo:
+            json.dump(
+                [],
+                archivo
+            )
+
+
+def leer_procesos():
+
+    preparar_estado()
+
+    try:
+
+        with open(
+            ARCHIVO_PROCESOS,
+            "r",
+            encoding="utf-8"
+        ) as archivo:
+
+            procesos = json.load(
+                archivo
+            )
+
+        if not isinstance(
+            procesos,
+            list
+        ):
+            return []
+
+        return procesos
+
+    except Exception:
+
+        return []
+
+
+def guardar_procesos(
+    procesos
+):
+
+    preparar_estado()
+
+    temporal = (
+        ARCHIVO_PROCESOS
+        + ".tmp"
+    )
+
+    with open(
+        temporal,
+        "w",
+        encoding="utf-8"
+    ) as archivo:
+
+        json.dump(
+            procesos,
+            archivo,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    os.replace(
+        temporal,
+        ARCHIVO_PROCESOS
+    )
+
+
+def proceso_vivo(
+    pid
+):
+
+    try:
+
+        os.kill(
+            pid,
+            0
+        )
+
+        return True
+
+    except ProcessLookupError:
+
+        return False
+
+    except PermissionError:
+
+        return True
+
+    except Exception:
+
+        return False
+
+
+def limpiar_procesos():
+
+    procesos = leer_procesos()
+
+    vivos = []
+
+    for proceso in procesos:
+
+        pid = proceso.get(
+            "pid"
+        )
+
+        if not isinstance(
+            pid,
+            int
+        ):
+            continue
+
+        if proceso_vivo(
+            pid
+        ):
+            vivos.append(
+                proceso
+            )
+
+    guardar_procesos(
+        vivos
+    )
+
+    return vivos
+
+
+def registrar_proceso(
+    nombre
+):
+
+    procesos = limpiar_procesos()
+
+    procesos.append(
+        {
+            "pid": PID_ACTUAL,
+            "programa": nombre,
+            "ruta": os.path.join(
+                CARPETA_PROGRAMAS,
+                nombre + ".rl"
+            ),
+            "inicio": time.time()
+        }
+    )
+
+    guardar_procesos(
+        procesos
+    )
+
+
+def desregistrar_proceso():
+
+    procesos = leer_procesos()
+
+    procesos = [
+        proceso
+        for proceso in procesos
+        if proceso.get("pid")
+        != PID_ACTUAL
+    ]
+
+    guardar_procesos(
+        procesos
+    )
 
 
 # ==========================
 # ARGUMENTOS
 # ==========================
 
-def separar_argumentos(
+def convertir_partes(
     entrada
 ):
 
-    # Permite cosas como:
-    #
-    # programa --"hola"
-    #
-    # programa --nombre "Randommatix"
-    #
-    # programa --nombre "Randommatix" --edad 20
+    try:
 
-    patron = (
-        r'--"[^"]*"'
-        r'|"[^"]*"'
-        r'|\S+'
-    )
+        return shlex.split(
+            entrada
+        )
 
-    partes = re.findall(
-        patron,
-        entrada
-    )
+    except ValueError as error:
+
+        print(
+            f"Error en los argumentos: "
+            f"{error}"
+        )
+
+        return None
+
+
+def separar_argumentos_partes(
+    partes
+):
 
     if not partes:
 
@@ -54,37 +262,14 @@ def separar_argumentos(
 
     i = 1
 
-    while i < len(partes):
+    while i < len(
+        partes
+    ):
 
         parte = partes[i]
 
         # ==========================
-        # --"valor"
-        # ==========================
-
-        if (
-            parte.startswith(
-                '--"'
-            )
-            and parte.endswith(
-                '"'
-            )
-        ):
-
-            valor = parte[
-                3:-1
-            ]
-
-            argumentos.append(
-                valor
-            )
-
-            i += 1
-
-            continue
-
-        # ==========================
-        # --nombre "valor"
+        # --nombre valor
         # ==========================
 
         if parte.startswith(
@@ -95,7 +280,10 @@ def separar_argumentos(
                 parte[2:]
             )
 
-            if nombre_parametro == "":
+            if (
+                nombre_parametro
+                == ""
+            ):
 
                 print(
                     "Error: parámetro "
@@ -103,6 +291,46 @@ def separar_argumentos(
                 )
 
                 return None, None
+
+            # ----------------------
+            # --nombre=valor
+            # ----------------------
+
+            if "=" in nombre_parametro:
+
+                nombre_parametro, valor = (
+                    nombre_parametro.split(
+                        "=",
+                        1
+                    )
+                )
+
+                if (
+                    nombre_parametro
+                    == ""
+                ):
+
+                    print(
+                        "Error: parámetro "
+                        "vacío."
+                    )
+
+                    return None, None
+
+                argumentos.append(
+                    {
+                        nombre_parametro:
+                        valor
+                    }
+                )
+
+                i += 1
+
+                continue
+
+            # ----------------------
+            # --nombre valor
+            # ----------------------
 
             if i + 1 >= len(
                 partes
@@ -120,19 +348,6 @@ def separar_argumentos(
                 i + 1
             ]
 
-            if (
-                valor.startswith(
-                    '"'
-                )
-                and valor.endswith(
-                    '"'
-                )
-            ):
-
-                valor = valor[
-                    1:-1
-                ]
-
             argumentos.append(
                 {
                     nombre_parametro:
@@ -148,19 +363,6 @@ def separar_argumentos(
         # ARGUMENTO NORMAL
         # ==========================
 
-        if (
-            parte.startswith(
-                '"'
-            )
-            and parte.endswith(
-                '"'
-            )
-        ):
-
-            parte = parte[
-                1:-1
-            ]
-
         argumentos.append(
             parte
         )
@@ -168,6 +370,23 @@ def separar_argumentos(
         i += 1
 
     return nombre, argumentos
+
+
+def separar_argumentos(
+    entrada
+):
+
+    partes = convertir_partes(
+        entrada
+    )
+
+    if partes is None:
+
+        return None, None
+
+    return separar_argumentos_partes(
+        partes
+    )
 
 
 # ==========================
@@ -203,7 +422,13 @@ def ejecutar_programa(
             f"'{nombre}'."
         )
 
-        return
+        return 1
+
+    registrar_proceso(
+        nombre
+    )
+
+    codigo = ""
 
     try:
 
@@ -259,6 +484,8 @@ def ejecutar_programa(
             ast
         )
 
+        return 0
+
     except ErrorRandomLang as error:
 
         print(
@@ -274,11 +501,24 @@ def ejecutar_programa(
             )
         )
 
+        return 1
+
     except ErrorEjecucionRandomLang as error:
 
         print(
             error
         )
+
+        return 1
+
+    except KeyboardInterrupt:
+
+        print(
+            f"\nPrograma "
+            f"'{nombre}' detenido."
+        )
+
+        return 130
 
     except Exception as error:
 
@@ -291,68 +531,145 @@ def ejecutar_programa(
             error
         )
 
+        return 1
+
+    finally:
+
+        desregistrar_proceso()
+
 
 # ==========================
-# CONSOLA RANDOMLANG
+# REPL
 # ==========================
 
-print(
-    "=== RANDOMLANG ==="
-)
+def iniciar_repl():
 
-print(
-    "Escribe el nombre de un "
-    "programa para ejecutarlo."
-)
+    print(
+        "=== RANDOMLANG ==="
+    )
 
-print(
-    "Los programas se encuentran "
-    "en la carpeta 'Programas/'."
-)
+    print(
+        "Escribe el nombre de un "
+        "programa para ejecutarlo."
+    )
 
-print(
-    "Puedes pasar parámetros al programa."
-)
+    print(
+        "Los programas se encuentran "
+        "en la carpeta 'Programas/'."
+    )
 
-print(
-    "Escribe 'salir' para cerrar."
-)
+    print(
+        "Puedes pasar parámetros al programa."
+    )
 
-print()
+    print(
+        "Escribe 'salir' para cerrar."
+    )
 
+    print()
 
-while True:
+    while True:
 
-    entrada = input(
-        "RandomLang> "
-    ).strip()
+        try:
 
-    if (
-        entrada.lower()
-        == "salir"
-    ):
+            entrada = input(
+                "RandomLang> "
+            ).strip()
 
-        print(
-            "Hasta luego."
+        except EOFError:
+
+            print()
+
+            break
+
+        except KeyboardInterrupt:
+
+            print(
+                "\nHasta luego."
+            )
+
+            break
+
+        if (
+            entrada.lower()
+            == "salir"
+        ):
+
+            print(
+                "Hasta luego."
+            )
+
+            break
+
+        if entrada == "":
+
+            continue
+
+        nombre, argumentos = (
+            separar_argumentos(
+                entrada
+            )
         )
 
-        break
+        if nombre is None:
 
-    if entrada == "":
+            continue
 
-        continue
+        ejecutar_programa(
+            nombre,
+            argumentos
+        )
+
+
+# ==========================
+# MODO CLI
+# ==========================
+
+def iniciar_cli(
+    argumentos_cli
+):
 
     nombre, argumentos = (
-        separar_argumentos(
-            entrada
+        separar_argumentos_partes(
+            argumentos_cli
         )
     )
 
     if nombre is None:
 
-        continue
+        return 1
 
-    ejecutar_programa(
+    return ejecutar_programa(
         nombre,
         argumentos
+    )
+
+
+# ==========================
+# MAIN
+# ==========================
+
+def main():
+
+    preparar_estado()
+
+    # Sin argumentos:
+    # abrir REPL.
+    if len(sys.argv) == 1:
+
+        iniciar_repl()
+
+        return 0
+
+    # Con argumentos:
+    # ejecutar directamente.
+    return iniciar_cli(
+        sys.argv[1:]
+    )
+
+
+if __name__ == "__main__":
+
+    sys.exit(
+        main()
     )
