@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+RANDOMLANG_DIR="/storage/emulated/0/RandomLang"
 
-exec python3 "$SCRIPT_DIR/main.py" "$@"
+exec python3 "$RANDOMLANG_DIR/main.py" "$@"
