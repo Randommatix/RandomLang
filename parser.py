@@ -5,7 +5,12 @@ class GuardarVariable:
         self.valor = valor
 
     def __repr__(self):
-        return f"GuardarVariable({self.nombre}, {self.valor})"
+        return (
+            f"GuardarVariable("
+            f"{self.nombre}, "
+            f"{self.valor}"
+            f")"
+        )
 
 
 class AsignarAcceso:
@@ -133,6 +138,63 @@ class Operacion:
         )
 
 
+class Comparacion:
+
+    def __init__(
+        self,
+        izquierda,
+        operador,
+        derecha
+    ):
+        self.izquierda = izquierda
+        self.operador = operador
+        self.derecha = derecha
+
+    def __repr__(self):
+        return (
+            f"Comparacion("
+            f"{self.izquierda} "
+            f"{self.operador} "
+            f"{self.derecha}"
+            f")"
+        )
+
+
+class Logica:
+
+    def __init__(
+        self,
+        izquierda,
+        operador,
+        derecha
+    ):
+        self.izquierda = izquierda
+        self.operador = operador
+        self.derecha = derecha
+
+    def __repr__(self):
+        return (
+            f"Logica("
+            f"{self.izquierda} "
+            f"{self.operador} "
+            f"{self.derecha}"
+            f")"
+        )
+
+
+class Negacion:
+
+    def __init__(self, valor):
+        self.valor = valor
+
+    def __repr__(self):
+        return (
+            f"Negacion("
+            f"{self.valor}"
+            f")"
+        )
+
+
 class Si:
 
     def __init__(
@@ -192,28 +254,6 @@ class ParaCada:
             f"variable={self.variable}, "
             f"lista={self.lista}, "
             f"bloque={self.bloque}"
-            f")"
-        )
-
-
-class Comparacion:
-
-    def __init__(
-        self,
-        izquierda,
-        operador,
-        derecha
-    ):
-        self.izquierda = izquierda
-        self.operador = operador
-        self.derecha = derecha
-
-    def __repr__(self):
-        return (
-            f"Comparacion("
-            f"{self.izquierda} "
-            f"{self.operador} "
-            f"{self.derecha}"
             f")"
         )
 
@@ -296,15 +336,21 @@ class Parser:
         self.posicion = 0
 
     def actual(self):
-        if self.posicion >= len(self.tokens):
+
+        if self.posicion >= len(
+            self.tokens
+        ):
             return None
 
-        return self.tokens[self.posicion]
+        return self.tokens[
+            self.posicion
+        ]
 
     def avanzar(self):
         self.posicion += 1
 
     def esperar(self, tipo):
+
         token = self.actual()
 
         if (
@@ -321,9 +367,11 @@ class Parser:
         return token
 
     def parsear(self):
+
         instrucciones = []
 
         while self.actual() is not None:
+
             if self.actual().tipo in (
                 "NUEVA_LINEA",
                 "DEDENT"
@@ -366,33 +414,53 @@ class Parser:
             return self.parsear_extraer()
 
         if token.tipo == "ROMPER":
+
             self.avanzar()
-            self.esperar("NUEVA_LINEA")
+
+            self.esperar(
+                "NUEVA_LINEA"
+            )
+
             return Romper()
 
         if token.tipo == "CONTINUAR":
+
             self.avanzar()
-            self.esperar("NUEVA_LINEA")
+
+            self.esperar(
+                "NUEVA_LINEA"
+            )
+
             return Continuar()
 
         if token.tipo == "IDENTIFICADOR":
-            return self.parsear_instruccion_identificador()
+            return (
+                self.parsear_instruccion_identificador()
+            )
 
         raise Exception(
             f"Instrucción inesperada: {token}"
         )
 
-    def parsear_instruccion_identificador(self):
+    def parsear_instruccion_identificador(
+        self
+    ):
 
         nombre = self.esperar(
             "IDENTIFICADOR"
         ).valor
 
         if self.actual() is not None:
-            if self.actual().tipo == "PAREN_IZQ":
 
-                llamada = self.parsear_llamada_funcion(
-                    nombre
+            if (
+                self.actual().tipo
+                == "PAREN_IZQ"
+            ):
+
+                llamada = (
+                    self.parsear_llamada_funcion(
+                        nombre
+                    )
                 )
 
                 self.esperar(
@@ -401,15 +469,24 @@ class Parser:
 
                 return llamada
 
-            if self.actual().tipo == "CORCHETE_IZQ":
+            if (
+                self.actual().tipo
+                == "CORCHETE_IZQ"
+            ):
 
-                acceso = self.parsear_accesos(
-                    Variable(nombre)
+                acceso = (
+                    self.parsear_accesos(
+                        Variable(nombre)
+                    )
                 )
 
-                self.esperar("IGUAL")
+                self.esperar(
+                    "IGUAL"
+                )
 
-                valor = self.parsear_expresion()
+                valor = (
+                    self.parsear_expresion()
+                )
 
                 self.esperar(
                     "NUEVA_LINEA"
@@ -434,11 +511,17 @@ class Parser:
             "IDENTIFICADOR"
         ).valor
 
-        self.esperar("IGUAL")
+        self.esperar(
+            "IGUAL"
+        )
 
-        valor = self.parsear_expresion()
+        valor = (
+            self.parsear_expresion()
+        )
 
-        self.esperar("NUEVA_LINEA")
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
         return GuardarVariable(
             nombre,
@@ -449,9 +532,13 @@ class Parser:
 
         self.avanzar()
 
-        valor = self.parsear_expresion()
+        valor = (
+            self.parsear_expresion()
+        )
 
-        self.esperar("NUEVA_LINEA")
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
         return Mostrar(valor)
 
@@ -459,9 +546,13 @@ class Parser:
 
         self.avanzar()
 
-        valor = self.parsear_expresion()
+        valor = (
+            self.parsear_expresion()
+        )
 
-        self.esperar("NUEVA_LINEA")
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
         return Devolver(valor)
 
@@ -473,7 +564,9 @@ class Parser:
             "IDENTIFICADOR"
         )
 
-        self.esperar("NUEVA_LINEA")
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
         return Extraer(
             token.valor
@@ -491,11 +584,17 @@ class Parser:
 
         if (
             self.actual() is not None
-            and self.actual().tipo == "PAREN_IZQ"
+            and self.actual().tipo
+            == "PAREN_IZQ"
         ):
+
             self.avanzar()
 
-            if self.actual().tipo != "PAREN_DER":
+            if (
+                self.actual().tipo
+                != "PAREN_DER"
+            ):
+
                 while True:
 
                     parametro = self.esperar(
@@ -514,15 +613,29 @@ class Parser:
 
                     self.avanzar()
 
-            self.esperar("PAREN_DER")
+            self.esperar(
+                "PAREN_DER"
+            )
 
-        self.esperar("DOS_PUNTOS")
-        self.esperar("NUEVA_LINEA")
-        self.esperar("INDENT")
+        self.esperar(
+            "DOS_PUNTOS"
+        )
 
-        bloque = self.parsear_bloque()
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
-        self.esperar("DEDENT")
+        self.esperar(
+            "INDENT"
+        )
+
+        bloque = (
+            self.parsear_bloque()
+        )
+
+        self.esperar(
+            "DEDENT"
+        )
 
         return Funcion(
             nombre,
@@ -534,31 +647,72 @@ class Parser:
 
         self.avanzar()
 
-        condicion = self.parsear_condicion()
+        condicion = (
+            self.parsear_condicion()
+        )
 
-        self.esperar("DOS_PUNTOS")
-        self.esperar("NUEVA_LINEA")
-        self.esperar("INDENT")
+        self.esperar(
+            "DOS_PUNTOS"
+        )
 
-        bloque_si = self.parsear_bloque()
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
-        self.esperar("DEDENT")
+        self.esperar(
+            "INDENT"
+        )
+
+        bloque_si = (
+            self.parsear_bloque()
+        )
+
+        self.esperar(
+            "DEDENT"
+        )
 
         bloque_sino = None
 
         if (
             self.actual() is not None
-            and self.actual().tipo == "SINO"
+            and self.actual().tipo
+            == "SINO"
         ):
+
             self.avanzar()
 
-            self.esperar("DOS_PUNTOS")
-            self.esperar("NUEVA_LINEA")
-            self.esperar("INDENT")
+            # sino si
+            if (
+                self.actual() is not None
+                and self.actual().tipo
+                == "SI"
+            ):
 
-            bloque_sino = self.parsear_bloque()
+                bloque_sino = [
+                    self.parsear_si()
+                ]
 
-            self.esperar("DEDENT")
+            else:
+
+                self.esperar(
+                    "DOS_PUNTOS"
+                )
+
+                self.esperar(
+                    "NUEVA_LINEA"
+                )
+
+                self.esperar(
+                    "INDENT"
+                )
+
+                bloque_sino = (
+                    self.parsear_bloque()
+                )
+
+                self.esperar(
+                    "DEDENT"
+                )
 
         return Si(
             condicion,
@@ -570,15 +724,29 @@ class Parser:
 
         self.avanzar()
 
-        condicion = self.parsear_condicion()
+        condicion = (
+            self.parsear_condicion()
+        )
 
-        self.esperar("DOS_PUNTOS")
-        self.esperar("NUEVA_LINEA")
-        self.esperar("INDENT")
+        self.esperar(
+            "DOS_PUNTOS"
+        )
 
-        bloque = self.parsear_bloque()
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
-        self.esperar("DEDENT")
+        self.esperar(
+            "INDENT"
+        )
+
+        bloque = (
+            self.parsear_bloque()
+        )
+
+        self.esperar(
+            "DEDENT"
+        )
 
         return Mientras(
             condicion,
@@ -589,23 +757,41 @@ class Parser:
 
         self.avanzar()
 
-        self.esperar("CADA")
+        self.esperar(
+            "CADA"
+        )
 
         variable = self.esperar(
             "IDENTIFICADOR"
         )
 
-        self.esperar("EN")
+        self.esperar(
+            "EN"
+        )
 
-        lista = self.parsear_expresion()
+        lista = (
+            self.parsear_expresion()
+        )
 
-        self.esperar("DOS_PUNTOS")
-        self.esperar("NUEVA_LINEA")
-        self.esperar("INDENT")
+        self.esperar(
+            "DOS_PUNTOS"
+        )
 
-        bloque = self.parsear_bloque()
+        self.esperar(
+            "NUEVA_LINEA"
+        )
 
-        self.esperar("DEDENT")
+        self.esperar(
+            "INDENT"
+        )
+
+        bloque = (
+            self.parsear_bloque()
+        )
+
+        self.esperar(
+            "DEDENT"
+        )
 
         return ParaCada(
             variable.valor,
@@ -619,9 +805,15 @@ class Parser:
 
         while (
             self.actual() is not None
-            and self.actual().tipo != "DEDENT"
+            and self.actual().tipo
+            != "DEDENT"
         ):
-            if self.actual().tipo == "NUEVA_LINEA":
+
+            if (
+                self.actual().tipo
+                == "NUEVA_LINEA"
+            ):
+
                 self.avanzar()
                 continue
 
@@ -631,9 +823,83 @@ class Parser:
 
         return instrucciones
 
-    def parsear_condicion(self):
+    # ==============================
+    # CONDICIONES
+    # ==============================
 
-        izquierda = self.parsear_expresion()
+    def parsear_condicion(self):
+        return self.parsear_o()
+
+    def parsear_o(self):
+
+        izquierda = (
+            self.parsear_y()
+        )
+
+        while (
+            self.actual() is not None
+            and self.actual().tipo == "O"
+        ):
+
+            self.avanzar()
+
+            derecha = (
+                self.parsear_y()
+            )
+
+            izquierda = Logica(
+                izquierda,
+                "o",
+                derecha
+            )
+
+        return izquierda
+
+    def parsear_y(self):
+
+        izquierda = (
+            self.parsear_no()
+        )
+
+        while (
+            self.actual() is not None
+            and self.actual().tipo == "Y"
+        ):
+
+            self.avanzar()
+
+            derecha = (
+                self.parsear_no()
+            )
+
+            izquierda = Logica(
+                izquierda,
+                "y",
+                derecha
+            )
+
+        return izquierda
+
+    def parsear_no(self):
+
+        if (
+            self.actual() is not None
+            and self.actual().tipo == "NO"
+        ):
+
+            self.avanzar()
+
+            return Negacion(
+                self.parsear_no()
+            )
+
+        return self.parsear_comparacion()
+
+    def parsear_comparacion(self):
+
+        izquierda = (
+            self.parsear_expresion()
+        )
 
         operadores = {
             "MAYOR": ">",
@@ -650,9 +916,10 @@ class Parser:
             token is None
             or token.tipo not in operadores
         ):
+
             raise Exception(
                 "Se esperaba un operador "
-                f"de comparación, pero apareció: "
+                "de comparación, pero apareció: "
                 f"{token}"
             )
 
@@ -662,7 +929,9 @@ class Parser:
 
         self.avanzar()
 
-        derecha = self.parsear_expresion()
+        derecha = (
+            self.parsear_expresion()
+        )
 
         return Comparacion(
             izquierda,
@@ -670,16 +939,28 @@ class Parser:
             derecha
         )
 
+    # ==============================
+    # EXPRESIONES
+    # ==============================
+
     def parsear_expresion(self):
 
-        izquierda = self.parsear_termino()
+        izquierda = (
+            self.parsear_termino()
+        )
 
         while self.actual() is not None:
 
-            if self.actual().tipo == "MAS":
+            if (
+                self.actual().tipo
+                == "MAS"
+            ):
+
                 self.avanzar()
 
-                derecha = self.parsear_termino()
+                derecha = (
+                    self.parsear_termino()
+                )
 
                 izquierda = Operacion(
                     izquierda,
@@ -687,10 +968,16 @@ class Parser:
                     derecha
                 )
 
-            elif self.actual().tipo == "MENOS":
+            elif (
+                self.actual().tipo
+                == "MENOS"
+            ):
+
                 self.avanzar()
 
-                derecha = self.parsear_termino()
+                derecha = (
+                    self.parsear_termino()
+                )
 
                 izquierda = Operacion(
                     izquierda,
@@ -705,14 +992,22 @@ class Parser:
 
     def parsear_termino(self):
 
-        izquierda = self.parsear_valor()
+        izquierda = (
+            self.parsear_valor()
+        )
 
         while self.actual() is not None:
 
-            if self.actual().tipo == "MULTIPLICAR":
+            if (
+                self.actual().tipo
+                == "MULTIPLICAR"
+            ):
+
                 self.avanzar()
 
-                derecha = self.parsear_valor()
+                derecha = (
+                    self.parsear_valor()
+                )
 
                 izquierda = Operacion(
                     izquierda,
@@ -720,14 +1015,37 @@ class Parser:
                     derecha
                 )
 
-            elif self.actual().tipo == "DIVIDIR":
+            elif (
+                self.actual().tipo
+                == "DIVIDIR"
+            ):
+
                 self.avanzar()
 
-                derecha = self.parsear_valor()
+                derecha = (
+                    self.parsear_valor()
+                )
 
                 izquierda = Operacion(
                     izquierda,
                     "/",
+                    derecha
+                )
+
+            elif (
+                self.actual().tipo
+                == "MODULO"
+            ):
+
+                self.avanzar()
+
+                derecha = (
+                    self.parsear_valor()
+                )
+
+                izquierda = Operacion(
+                    izquierda,
+                    "%",
                     derecha
                 )
 
@@ -765,13 +1083,17 @@ class Parser:
 
             self.avanzar()
 
-            valor = Booleano(True)
+            valor = Booleano(
+                True
+            )
 
         elif token.tipo == "FALSO":
 
             self.avanzar()
 
-            valor = Booleano(False)
+            valor = Booleano(
+                False
+            )
 
         elif token.tipo == "NULO":
 
@@ -790,11 +1112,15 @@ class Parser:
                 and self.actual().tipo
                 == "PAREN_IZQ"
             ):
-                valor = self.parsear_llamada_funcion(
-                    nombre
+
+                valor = (
+                    self.parsear_llamada_funcion(
+                        nombre
+                    )
                 )
 
             else:
+
                 valor = Variable(
                     nombre
                 )
@@ -803,7 +1129,9 @@ class Parser:
 
             self.avanzar()
 
-            valor = self.parsear_expresion()
+            valor = (
+                self.parsear_expresion()
+            )
 
             self.esperar(
                 "PAREN_DER"
@@ -811,18 +1139,25 @@ class Parser:
 
         elif token.tipo == "CORCHETE_IZQ":
 
-            valor = self.parsear_lista()
+            valor = (
+                self.parsear_lista()
+            )
 
         elif token.tipo == "LLAVE_IZQ":
 
-            valor = self.parsear_diccionario()
+            valor = (
+                self.parsear_diccionario()
+            )
 
         else:
+
             raise Exception(
                 f"Valor inesperado: {token}"
             )
 
-        return self.parsear_accesos(valor)
+        return self.parsear_accesos(
+            valor
+        )
 
     def parsear_lista(self):
 
@@ -832,11 +1167,16 @@ class Parser:
 
         elementos = []
 
-        if self.actual().tipo == "CORCHETE_DER":
+        if (
+            self.actual().tipo
+            == "CORCHETE_DER"
+        ):
 
             self.avanzar()
 
-            return Lista(elementos)
+            return Lista(
+                elementos
+            )
 
         while True:
 
@@ -844,7 +1184,10 @@ class Parser:
                 self.parsear_expresion()
             )
 
-            if self.actual().tipo != "COMA":
+            if (
+                self.actual().tipo
+                != "COMA"
+            ):
                 break
 
             self.avanzar()
@@ -853,7 +1196,9 @@ class Parser:
             "CORCHETE_DER"
         )
 
-        return Lista(elementos)
+        return Lista(
+            elementos
+        )
 
     def parsear_diccionario(self):
 
@@ -865,9 +1210,15 @@ class Parser:
 
         while (
             self.actual() is not None
-            and self.actual().tipo != "LLAVE_DER"
+            and self.actual().tipo
+            != "LLAVE_DER"
         ):
-            if self.actual().tipo == "NUEVA_LINEA":
+
+            if (
+                self.actual().tipo
+                == "NUEVA_LINEA"
+            ):
+
                 self.avanzar()
                 continue
 
@@ -875,9 +1226,13 @@ class Parser:
                 "STRING"
             )
 
-            self.esperar("DOS_PUNTOS")
+            self.esperar(
+                "DOS_PUNTOS"
+            )
 
-            valor = self.parsear_expresion()
+            valor = (
+                self.parsear_expresion()
+            )
 
             elementos.append(
                 (
@@ -886,14 +1241,25 @@ class Parser:
                 )
             )
 
-            if self.actual().tipo == "COMA":
+            if (
+                self.actual().tipo
+                == "COMA"
+            ):
+
                 self.avanzar()
                 continue
 
-            if self.actual().tipo == "NUEVA_LINEA":
+            if (
+                self.actual().tipo
+                == "NUEVA_LINEA"
+            ):
                 continue
 
-            if self.actual().tipo != "LLAVE_DER":
+            if (
+                self.actual().tipo
+                != "LLAVE_DER"
+            ):
+
                 raise Exception(
                     "Se esperaba ',' o '}' "
                     "en el diccionario"
@@ -914,9 +1280,12 @@ class Parser:
             and self.actual().tipo
             == "CORCHETE_IZQ"
         ):
+
             self.avanzar()
 
-            indice = self.parsear_expresion()
+            indice = (
+                self.parsear_expresion()
+            )
 
             self.esperar(
                 "CORCHETE_DER"
@@ -935,6 +1304,7 @@ class Parser:
     ):
 
         if nombre is None:
+
             nombre = self.esperar(
                 "IDENTIFICADOR"
             ).valor
@@ -949,6 +1319,7 @@ class Parser:
             self.actual().tipo
             == "PAREN_DER"
         ):
+
             self.avanzar()
 
             return LlamadaFuncion(
