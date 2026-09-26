@@ -1,0 +1,319 @@
+#!/data/data/com.termux/files/usr/bin/python3
+
+import json
+import os
+import signal
+import sys
+
+
+ARCHIVO_PROCESOS = os.path.join(
+    os.path.expanduser("~"),
+    ".randomlang",
+    "processes.json"
+)
+
+
+def leer_procesos():
+
+    if not os.path.isfile(
+        ARCHIVO_PROCESOS
+    ):
+        return []
+
+    try:
+
+        with open(
+            ARCHIVO_PROCESOS,
+            "r",
+            encoding="utf-8"
+        ) as archivo:
+
+            datos = json.load(
+                archivo
+            )
+
+        if not isinstance(
+            datos,
+            list
+        ):
+            return []
+
+        return datos
+
+    except Exception:
+
+        return []
+
+
+def guardar_procesos(
+    procesos
+):
+
+    os.makedirs(
+        os.path.dirname(
+            ARCHIVO_PROCESOS
+        ),
+        exist_ok=True
+    )
+
+    temporal = (
+        ARCHIVO_PROCESOS
+        + ".tmp"
+    )
+
+    with open(
+        temporal,
+        "w",
+        encoding="utf-8"
+    ) as archivo:
+
+        json.dump(
+            procesos,
+            archivo,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    os.replace(
+        temporal,
+        ARCHIVO_PROCESOS
+    )
+
+
+def proceso_vivo(
+    pid
+):
+
+    try:
+
+        os.kill(
+            pid,
+            0
+        )
+
+        return True
+
+    except ProcessLookupError:
+
+        return False
+
+    except PermissionError:
+
+        return True
+
+    except Exception:
+
+        return False
+
+
+def nombre_normalizado(
+    nombre
+):
+
+    if nombre.endswith(
+        ".rl"
+    ):
+
+        return nombre[:-3]
+
+    return nombre
+
+
+def matar_proceso(
+    pid
+):
+
+    try:
+
+        os.kill(
+            pid,
+            signal.SIGTERM
+        )
+
+        return True
+
+    except ProcessLookupError:
+
+        return False
+
+    except PermissionError:
+
+        print(
+            f"No se pudo detener "
+            f"el proceso {pid}: "
+            "permiso denegado."
+        )
+
+        return False
+
+    except Exception as error:
+
+        print(
+            f"No se pudo detener "
+            f"el proceso {pid}: "
+            f"{error}"
+        )
+
+        return False
+
+
+def main():
+
+    procesos = leer_procesos()
+
+    # Eliminar procesos muertos.
+    procesos_vivos = [
+        proceso
+        for proceso in procesos
+        if isinstance(
+            proceso.get("pid"),
+            int
+        )
+        and proceso_vivo(
+            proceso["pid"]
+        )
+    ]
+
+    # ==========================
+    # SIN ARGUMENTOS
+    # ==========================
+
+    if len(sys.argv) == 1:
+
+        if not procesos_vivos:
+
+            print(
+                "No hay programas "
+                "RandomLang ejecutándose."
+            )
+
+            guardar_procesos(
+                []
+            )
+
+            return 0
+
+        detenidos = 0
+
+        for proceso in procesos_vivos:
+
+            pid = proceso[
+                "pid"
+            ]
+
+            nombre = proceso.get(
+                "programa",
+                "desconocido"
+            )
+
+            if matar_proceso(
+                pid
+            ):
+
+                print(
+                    f"Detenido: "
+                    f"{nombre}.rl "
+                    f"(PID {pid})"
+                )
+
+                detenidos += 1
+
+        guardar_procesos(
+            []
+        )
+
+        print(
+            f"Programas detenidos: "
+            f"{detenidos}"
+        )
+
+        return 0
+
+    # ==========================
+    # CON ARCHIVO
+    # ==========================
+
+    objetivo = (
+        nombre_normalizado(
+            sys.argv[1]
+        )
+    )
+
+    encontrados = []
+
+    restantes = []
+
+    for proceso in procesos_vivos:
+
+        nombre = (
+            nombre_normalizado(
+                proceso.get(
+                    "programa",
+                    ""
+                )
+            )
+        )
+
+        if nombre == objetivo:
+
+            encontrados.append(
+                proceso
+            )
+
+        else:
+
+            restantes.append(
+                proceso
+            )
+
+    if not encontrados:
+
+        print(
+            f"No hay ninguna instancia "
+            f"de '{objetivo}.rl' "
+            "ejecutándose."
+        )
+
+        guardar_procesos(
+            restantes
+        )
+
+        return 0
+
+    detenidos = 0
+
+    for proceso in encontrados:
+
+        pid = proceso[
+            "pid"
+        ]
+
+        if matar_proceso(
+            pid
+        ):
+
+            print(
+                f"Detenido: "
+                f"{objetivo}.rl "
+                f"(PID {pid})"
+            )
+
+            detenidos += 1
+
+    guardar_procesos(
+        restantes
+    )
+
+    print(
+        f"Instancias detenidas: "
+        f"{detenidos}"
+    )
+
+    return 0
+
+
+if __name__ == "__main__":
+
+    sys.exit(
+        main()
+    )
