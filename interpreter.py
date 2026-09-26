@@ -19,6 +19,8 @@ from parser import (
     Operacion,
     Si,
     Comparacion,
+    Logica,
+    Negacion,
     Mientras,
     ParaCada,
     LlamadaFuncion,
@@ -62,9 +64,7 @@ class ErrorEjecucionRandomLang:
     def __str__(self):
 
         if self.linea is None:
-            return (
-                f"{self.mensaje}"
-            )
+            return self.mensaje
 
         lineas = self.codigo.splitlines()
 
@@ -72,9 +72,7 @@ class ErrorEjecucionRandomLang:
             self.linea < 1
             or self.linea > len(lineas)
         ):
-            return (
-                f"{self.mensaje}"
-            )
+            return self.mensaje
 
         texto = lineas[
             self.linea - 1
@@ -142,11 +140,16 @@ class Interpreter:
     # ERRORES
     # ==============================
 
-    def error(self, mensaje, nodo=None):
+    def error(
+        self,
+        mensaje,
+        nodo=None
+    ):
 
         linea = self.linea_actual
 
         if nodo is not None:
+
             linea = getattr(
                 nodo,
                 "linea",
@@ -165,13 +168,19 @@ class Interpreter:
     def ambito_actual(self):
         return self.ambitos[-1]
 
-    def obtener_variable(self, nombre):
+    def obtener_variable(
+        self,
+        nombre
+    ):
 
         for ambito in reversed(
             self.ambitos
         ):
+
             if nombre in ambito:
-                return ambito[nombre]
+                return ambito[
+                    nombre
+                ]
 
         self.error(
             f"La variable '{nombre}' "
@@ -183,6 +192,7 @@ class Interpreter:
         nombre,
         valor
     ):
+
         self.ambito_actual()[
             nombre
         ] = valor
@@ -197,6 +207,7 @@ class Interpreter:
     ):
 
         if funcion.nombre in self.funciones:
+
             self.error(
                 f"La función "
                 f"'{funcion.nombre}' "
@@ -222,6 +233,7 @@ class Interpreter:
         )
 
         if not os.path.isfile(ruta):
+
             self.error(
                 f"No se encontró el programa "
                 f"'{nombre}.rl' en "
@@ -233,11 +245,16 @@ class Interpreter:
             "r",
             encoding="utf-8"
         ) as archivo:
+
             codigo = archivo.read()
 
-        tokens = tokenize(codigo)
+        tokens = tokenize(
+            codigo
+        )
 
-        parser = Parser(tokens)
+        parser = Parser(
+            tokens
+        )
 
         ast = parser.parsear()
 
@@ -249,6 +266,7 @@ class Interpreter:
                 nodo,
                 Funcion
             ):
+
                 self.registrar_funcion(
                     nodo
                 )
@@ -272,6 +290,7 @@ class Interpreter:
                 nodo,
                 Funcion
             ):
+
                 self.registrar_funcion(
                     nodo
                 )
@@ -282,6 +301,7 @@ class Interpreter:
                 nodo,
                 Extraer
             ):
+
                 self.extraer_programa(
                     nodo.nombre
                 )
@@ -290,7 +310,10 @@ class Interpreter:
     # EJECUTAR
     # ==============================
 
-    def ejecutar(self, ast):
+    def ejecutar(
+        self,
+        ast
+    ):
 
         self.preparar_programa(
             ast
@@ -470,16 +493,12 @@ class Interpreter:
                 elementos,
                 list
             ):
+
                 self.error(
                     "La expresión de "
                     "'para cada' debe ser "
                     "una lista."
                 )
-
-            # IMPORTANTE:
-            # NO se crea un ámbito nuevo.
-            # La variable y los cambios
-            # quedan en el ámbito actual.
 
             for elemento in elementos:
 
@@ -553,6 +572,7 @@ class Interpreter:
             elementos = []
 
             for elemento in valor:
+
                 elementos.append(
                     self.convertir_mostrar(
                         elemento
@@ -625,9 +645,11 @@ class Interpreter:
                     i < len(texto)
                     and texto[i] != "\\"
                 ):
+
                     i += 1
 
                 if i >= len(texto):
+
                     self.error(
                         "Interpolación sin cerrar."
                     )
@@ -636,8 +658,10 @@ class Interpreter:
                     inicio:i
                 ]
 
-                valor = self.obtener_variable(
-                    nombre
+                valor = (
+                    self.obtener_variable(
+                        nombre
+                    )
                 )
 
                 resultado += (
@@ -772,16 +796,29 @@ class Interpreter:
             try:
 
                 if nodo.operador == "+":
-                    return izquierda + derecha
+                    return (
+                        izquierda + derecha
+                    )
 
                 if nodo.operador == "-":
-                    return izquierda - derecha
+                    return (
+                        izquierda - derecha
+                    )
 
                 if nodo.operador == "*":
-                    return izquierda * derecha
+                    return (
+                        izquierda * derecha
+                    )
 
                 if nodo.operador == "/":
-                    return izquierda / derecha
+                    return (
+                        izquierda / derecha
+                    )
+
+                if nodo.operador == "%":
+                    return (
+                        izquierda % derecha
+                    )
 
             except Exception as error:
 
@@ -794,6 +831,73 @@ class Interpreter:
                 f"Operador desconocido: "
                 f"{nodo.operador}"
             )
+
+        # ==========================
+        # NEGACIÓN
+        # ==========================
+
+        if isinstance(
+            nodo,
+            Negacion
+        ):
+
+            return not self.evaluar(
+                nodo.valor
+            )
+
+        # ==========================
+        # LÓGICA
+        # ==========================
+
+        if isinstance(
+            nodo,
+            Logica
+        ):
+
+            izquierda = self.evaluar(
+                nodo.izquierda
+            )
+
+            # Cortocircuito de "y".
+            if (
+                nodo.operador == "y"
+                and not izquierda
+            ):
+                return False
+
+            # Cortocircuito de "o".
+            if (
+                nodo.operador == "o"
+                and izquierda
+            ):
+                return True
+
+            derecha = self.evaluar(
+                nodo.derecha
+            )
+
+            if nodo.operador == "y":
+
+                return bool(
+                    izquierda
+                    and derecha
+                )
+
+            if nodo.operador == "o":
+
+                return bool(
+                    izquierda
+                    or derecha
+                )
+
+            self.error(
+                "Operador lógico desconocido: "
+                f"{nodo.operador}"
+            )
+
+        # ==========================
+        # COMPARACIÓN
+        # ==========================
 
         if isinstance(
             nodo,
@@ -811,22 +915,34 @@ class Interpreter:
             try:
 
                 if nodo.operador == ">":
-                    return izquierda > derecha
+                    return (
+                        izquierda > derecha
+                    )
 
                 if nodo.operador == "<":
-                    return izquierda < derecha
+                    return (
+                        izquierda < derecha
+                    )
 
                 if nodo.operador == ">=":
-                    return izquierda >= derecha
+                    return (
+                        izquierda >= derecha
+                    )
 
                 if nodo.operador == "<=":
-                    return izquierda <= derecha
+                    return (
+                        izquierda <= derecha
+                    )
 
                 if nodo.operador == "==":
-                    return izquierda == derecha
+                    return (
+                        izquierda == derecha
+                    )
 
                 if nodo.operador == "!=":
-                    return izquierda != derecha
+                    return (
+                        izquierda != derecha
+                    )
 
             except Exception as error:
 
@@ -873,6 +989,7 @@ class Interpreter:
                 indice,
                 int
             ):
+
                 self.error(
                     "El índice de una lista "
                     "debe ser un número entero."
@@ -882,6 +999,7 @@ class Interpreter:
                 indice < 0
                 or indice >= len(contenedor)
             ):
+
                 self.error(
                     f"Índice fuera de rango: "
                     f"{indice}"
@@ -900,12 +1018,14 @@ class Interpreter:
                 indice,
                 str
             ):
+
                 self.error(
                     "La clave de un diccionario "
                     "debe ser texto."
                 )
 
             if indice not in contenedor:
+
                 self.error(
                     f"La clave '{indice}' "
                     "no existe en el diccionario."
@@ -930,6 +1050,7 @@ class Interpreter:
             acceso,
             AccesoLista
         ):
+
             self.error(
                 "Asignación inválida."
             )
@@ -951,6 +1072,7 @@ class Interpreter:
                 indice,
                 int
             ):
+
                 self.error(
                     "El índice de una lista "
                     "debe ser un entero."
@@ -960,6 +1082,7 @@ class Interpreter:
                 indice < 0
                 or indice >= len(contenedor)
             ):
+
                 self.error(
                     f"Índice fuera de rango: "
                     f"{indice}"
@@ -980,6 +1103,7 @@ class Interpreter:
                 indice,
                 str
             ):
+
                 self.error(
                     "La clave de un diccionario "
                     "debe ser texto."
@@ -1012,6 +1136,7 @@ class Interpreter:
         if nodo.nombre == "aleatorio":
 
             if len(nodo.argumentos) != 2:
+
                 self.error(
                     "aleatorio() necesita "
                     "exactamente 2 argumentos."
@@ -1029,6 +1154,7 @@ class Interpreter:
                 minimo,
                 int
             ):
+
                 self.error(
                     "El primer argumento de "
                     "aleatorio() debe ser entero."
@@ -1038,12 +1164,14 @@ class Interpreter:
                 maximo,
                 int
             ):
+
                 self.error(
                     "El segundo argumento de "
                     "aleatorio() debe ser entero."
                 )
 
             if minimo > maximo:
+
                 self.error(
                     "El mínimo no puede ser "
                     "mayor que el máximo."
@@ -1061,6 +1189,7 @@ class Interpreter:
         if nodo.nombre == "contiene":
 
             if len(nodo.argumentos) != 2:
+
                 self.error(
                     "contiene() necesita "
                     "exactamente 2 argumentos."
@@ -1083,6 +1212,7 @@ class Interpreter:
                     contenido,
                     str
                 ):
+
                     self.error(
                         "El segundo argumento "
                         "de contiene() debe ser "
@@ -1111,6 +1241,7 @@ class Interpreter:
         if nodo.nombre == "separar":
 
             if len(nodo.argumentos) != 2:
+
                 self.error(
                     "separar() necesita "
                     "exactamente 2 argumentos."
@@ -1128,6 +1259,7 @@ class Interpreter:
                 texto,
                 str
             ):
+
                 self.error(
                     "El primer argumento de "
                     "separar() debe ser texto."
@@ -1137,6 +1269,7 @@ class Interpreter:
                 separador,
                 str
             ):
+
                 self.error(
                     "El segundo argumento de "
                     "separar() debe ser texto."
@@ -1153,6 +1286,7 @@ class Interpreter:
         if nodo.nombre == "remplazar":
 
             if len(nodo.argumentos) != 3:
+
                 self.error(
                     "remplazar() necesita "
                     "exactamente 3 argumentos."
@@ -1178,6 +1312,7 @@ class Interpreter:
                     reemplazo
                 )
             ):
+
                 self.error(
                     "Los argumentos de "
                     "remplazar() deben ser "
@@ -1196,6 +1331,7 @@ class Interpreter:
         if nodo.nombre == "longitud":
 
             if len(nodo.argumentos) != 1:
+
                 self.error(
                     "longitud() necesita "
                     "exactamente 1 argumento."
@@ -1207,8 +1343,13 @@ class Interpreter:
 
             if not isinstance(
                 valor,
-                (list, str, dict)
+                (
+                    list,
+                    str,
+                    dict
+                )
             ):
+
                 self.error(
                     "longitud() solo acepta "
                     "listas, textos o "
@@ -1224,6 +1365,7 @@ class Interpreter:
         if nodo.nombre == "agregar":
 
             if len(nodo.argumentos) != 2:
+
                 self.error(
                     "agregar() necesita "
                     "exactamente 2 argumentos."
@@ -1241,12 +1383,15 @@ class Interpreter:
                 lista,
                 list
             ):
+
                 self.error(
                     "El primer argumento de "
                     "agregar() debe ser una lista."
                 )
 
-            lista.append(valor)
+            lista.append(
+                valor
+            )
 
             return None
 
@@ -1257,6 +1402,7 @@ class Interpreter:
         if nodo.nombre == "eliminar":
 
             if len(nodo.argumentos) != 2:
+
                 self.error(
                     "eliminar() necesita "
                     "exactamente 2 argumentos."
@@ -1274,6 +1420,7 @@ class Interpreter:
                 lista,
                 list
             ):
+
                 self.error(
                     "El primer argumento de "
                     "eliminar() debe ser una lista."
@@ -1283,6 +1430,7 @@ class Interpreter:
                 indice,
                 int
             ):
+
                 self.error(
                     "El índice de eliminar() "
                     "debe ser entero."
@@ -1292,12 +1440,15 @@ class Interpreter:
                 indice < 0
                 or indice >= len(lista)
             ):
+
                 self.error(
                     f"Índice fuera de rango: "
                     f"{indice}"
                 )
 
-            return lista.pop(indice)
+            return lista.pop(
+                indice
+            )
 
         # ==========================
         # INSERTAR
@@ -1306,6 +1457,7 @@ class Interpreter:
         if nodo.nombre == "insertar":
 
             if len(nodo.argumentos) != 3:
+
                 self.error(
                     "insertar() necesita "
                     "exactamente 3 argumentos."
@@ -1327,6 +1479,7 @@ class Interpreter:
                 lista,
                 list
             ):
+
                 self.error(
                     "El primer argumento de "
                     "insertar() debe ser una lista."
@@ -1336,6 +1489,7 @@ class Interpreter:
                 indice,
                 int
             ):
+
                 self.error(
                     "El índice de insertar() "
                     "debe ser entero."
@@ -1354,10 +1508,16 @@ class Interpreter:
 
         if nodo.nombre == "parametro":
 
+            # Sin argumentos:
+            # parametro() -> Nulo
+            if len(nodo.argumentos) == 0:
+                return None
+
             if len(nodo.argumentos) != 1:
+
                 self.error(
-                    "parametro() necesita "
-                    "exactamente 1 argumento."
+                    "parametro() acepta "
+                    "cero o un argumento."
                 )
 
             nombre = self.evaluar(
@@ -1368,14 +1528,20 @@ class Interpreter:
                 nombre,
                 str
             ):
+
                 self.error(
                     "El parámetro de "
                     "parametro() debe ser texto."
                 )
 
-            if nombre.startswith("--"):
+            if nombre.startswith(
+                "--"
+            ):
+
                 clave = nombre[2:]
+
             else:
+
                 clave = nombre
 
             for argumento in self.argumentos:
@@ -1386,6 +1552,7 @@ class Interpreter:
                 ):
 
                     if clave in argumento:
+
                         return argumento[
                             clave
                         ]
@@ -1395,10 +1562,9 @@ class Interpreter:
                     if clave == "":
                         return argumento
 
-            self.error(
-                f"No se encontró el parámetro "
-                f"'{nombre}'."
-            )
+            # Un parámetro que no fue
+            # proporcionado también es Nulo.
+            return None
 
         # ==========================
         # OBTENER
@@ -1407,6 +1573,7 @@ class Interpreter:
         if nodo.nombre == "obtener":
 
             if len(nodo.argumentos) != 1:
+
                 self.error(
                     "obtener() necesita "
                     "exactamente 1 argumento."
@@ -1420,6 +1587,7 @@ class Interpreter:
                 ruta,
                 str
             ):
+
                 self.error(
                     "La ruta de obtener() "
                     "debe ser texto."
@@ -1432,6 +1600,7 @@ class Interpreter:
                     "r",
                     encoding="utf-8"
                 ) as archivo:
+
                     return archivo.read()
 
             except Exception as error:
@@ -1448,6 +1617,7 @@ class Interpreter:
         if nodo.nombre == "crearArchivo":
 
             if len(nodo.argumentos) != 2:
+
                 self.error(
                     "crearArchivo() necesita "
                     "exactamente 2 argumentos."
@@ -1465,6 +1635,7 @@ class Interpreter:
                 ruta,
                 str
             ):
+
                 self.error(
                     "La ruta de crearArchivo() "
                     "debe ser texto."
@@ -1474,6 +1645,7 @@ class Interpreter:
                 contenido,
                 str
             ):
+
                 self.error(
                     "El contenido de "
                     "crearArchivo() debe ser texto."
@@ -1486,6 +1658,7 @@ class Interpreter:
                     "w",
                     encoding="utf-8"
                 ) as archivo:
+
                     archivo.write(
                         contenido
                     )
@@ -1514,6 +1687,7 @@ class Interpreter:
             ) != len(
                 funcion.parametros
             ):
+
                 self.error(
                     f"La función "
                     f"'{nodo.nombre}' espera "
@@ -1559,6 +1733,7 @@ class Interpreter:
                 for instruccion in (
                     funcion.bloque
                 ):
+
                     self.ejecutar_nodo(
                         instruccion
                     )
