@@ -34,6 +34,31 @@ PALABRAS = {
     "Nulo": "NULO",
     "romper": "ROMPER",
     "continuar": "CONTINUAR",
+
+    # Operadores lógicos
+    "y": "Y",
+    "o": "O",
+    "no": "NO",
+}
+
+
+SIMBOLOS = {
+    "=": "IGUAL",
+    "+": "MAS",
+    "-": "MENOS",
+    "*": "MULTIPLICAR",
+    "/": "DIVIDIR",
+    "%": "MODULO",
+    ">": "MAYOR",
+    "<": "MENOR",
+    "(": "PAREN_IZQ",
+    ")": "PAREN_DER",
+    "[": "CORCHETE_IZQ",
+    "]": "CORCHETE_DER",
+    "{": "LLAVE_IZQ",
+    "}": "LLAVE_DER",
+    ",": "COMA",
+    ":": "DOS_PUNTOS",
 }
 
 
@@ -45,10 +70,12 @@ def tokenize(codigo):
     niveles_indentacion = [0]
     profundidad = 0
 
-    for numero_linea, linea in enumerate(
-        lineas,
-        start=1
-    ):
+    numero_linea = 0
+
+    while numero_linea < len(lineas):
+        numero_linea += 1
+
+        linea = lineas[numero_linea - 1]
         texto = linea.rstrip()
 
         if texto.strip() == "":
@@ -58,11 +85,12 @@ def tokenize(codigo):
 
         contenido = linea.lstrip(" ")
 
-        # Dentro de listas/diccionarios/paréntesis
-        # no se generan INDENT/DEDENT.
+        # Dentro de listas, diccionarios o paréntesis
+        # no se generan INDENT ni DEDENT.
         if profundidad == 0:
             if espacios > niveles_indentacion[-1]:
                 niveles_indentacion.append(espacios)
+
                 tokens.append(
                     Token(
                         "INDENT",
@@ -104,9 +132,90 @@ def tokenize(codigo):
                 i += 1
                 continue
 
-            # STRING
+            # -------------------------------------------------
+            # TEXTO MULTILÍNEA
+            #
+            # <|new|>
+            # texto
+            # texto
+            # <|new|>
+            #
+            # También permite:
+            #
+            # guardar texto = <|new|>Hola<|new|>
+            # -------------------------------------------------
+
+            marcador = "<|new|>"
+
+            if contenido.startswith(marcador, i):
+                linea_inicio = numero_linea
+
+                i += len(marcador)
+
+                valor = ""
+                cerrado = False
+
+                while True:
+                    # Buscar el cierre en la línea actual.
+                    posicion_cierre = contenido.find(
+                        marcador,
+                        i
+                    )
+
+                    if posicion_cierre != -1:
+                        valor += contenido[
+                            i:posicion_cierre
+                        ]
+
+                        i = (
+                            posicion_cierre
+                            + len(marcador)
+                        )
+
+                        cerrado = True
+                        break
+
+                    # No encontramos el cierre.
+                    # Guardamos el resto de esta línea.
+                    valor += contenido[i:]
+
+                    # El texto continúa en otra línea.
+                    if numero_linea >= len(lineas):
+                        break
+
+                    valor += "\n"
+
+                    numero_linea += 1
+
+                    siguiente_linea = (
+                        lineas[numero_linea - 1]
+                    )
+
+                    contenido = siguiente_linea
+                    i = 0
+
+                if not cerrado:
+                    raise Exception(
+                        f"Texto multilínea sin cerrar "
+                        f"desde la línea "
+                        f"{linea_inicio}"
+                    )
+
+                tokens.append(
+                    Token(
+                        "STRING",
+                        valor,
+                        linea_inicio
+                    )
+                )
+
+                continue
+
+            # -------------------------------------------------
+            # STRING NORMAL
+            # -------------------------------------------------
+
             if caracter == '"':
-                inicio = i
                 i += 1
 
                 valor = ""
@@ -115,6 +224,16 @@ def tokenize(codigo):
                     if contenido[i] == '"':
                         break
 
+                    # Las barras se conservan exactamente
+                    # como fueron escritas.
+                    #
+                    # Esto permite:
+                    #
+                    # "Hola \nombre\"
+                    #
+                    # El tokenizer no intenta interpretar
+                    # la interpolación. Eso lo hace el
+                    # interpreter.
                     valor += contenido[i]
                     i += 1
 
@@ -136,7 +255,10 @@ def tokenize(codigo):
 
                 continue
 
+            # -------------------------------------------------
             # NÚMERO
+            # -------------------------------------------------
+
             if caracter.isdigit():
                 inicio = i
 
@@ -172,7 +294,10 @@ def tokenize(codigo):
 
                 continue
 
-            # IDENTIFICADOR
+            # -------------------------------------------------
+            # IDENTIFICADOR / PALABRA RESERVADA
+            # -------------------------------------------------
+
             if (
                 caracter.isalpha()
                 or caracter == "_"
@@ -207,7 +332,10 @@ def tokenize(codigo):
 
                 continue
 
+            # -------------------------------------------------
             # OPERADORES DE DOS CARACTERES
+            # -------------------------------------------------
+
             if contenido.startswith(
                 ">=",
                 i
@@ -219,6 +347,7 @@ def tokenize(codigo):
                         numero_linea
                     )
                 )
+
                 i += 2
                 continue
 
@@ -233,6 +362,7 @@ def tokenize(codigo):
                         numero_linea
                     )
                 )
+
                 i += 2
                 continue
 
@@ -247,6 +377,7 @@ def tokenize(codigo):
                         numero_linea
                     )
                 )
+
                 i += 2
                 continue
 
@@ -261,29 +392,16 @@ def tokenize(codigo):
                         numero_linea
                     )
                 )
+
                 i += 2
                 continue
 
-            simbolos = {
-                "=": "IGUAL",
-                "+": "MAS",
-                "-": "MENOS",
-                "*": "MULTIPLICAR",
-                "/": "DIVIDIR",
-                ">": "MAYOR",
-                "<": "MENOR",
-                "(": "PAREN_IZQ",
-                ")": "PAREN_DER",
-                "[": "CORCHETE_IZQ",
-                "]": "CORCHETE_DER",
-                "{": "LLAVE_IZQ",
-                "}": "LLAVE_DER",
-                ",": "COMA",
-                ":": "DOS_PUNTOS",
-            }
+            # -------------------------------------------------
+            # SÍMBOLOS
+            # -------------------------------------------------
 
-            if caracter in simbolos:
-                tipo = simbolos[caracter]
+            if caracter in SIMBOLOS:
+                tipo = SIMBOLOS[caracter]
 
                 tokens.append(
                     Token(
@@ -309,12 +427,20 @@ def tokenize(codigo):
                 i += 1
                 continue
 
+            # -------------------------------------------------
+            # CARÁCTER DESCONOCIDO
+            # -------------------------------------------------
+
             raise Exception(
                 f"Carácter inesperado "
                 f"'{caracter}' en la línea "
                 f"{numero_linea}"
             )
 
+        # La línea actual terminó.
+        #
+        # Si estamos fuera de listas/diccionarios/
+        # paréntesis, agregamos NUEVA_LINEA.
         if profundidad == 0:
             tokens.append(
                 Token(
@@ -323,6 +449,10 @@ def tokenize(codigo):
                     numero_linea
                 )
             )
+
+    # ---------------------------------------------------------
+    # DEDENT FINAL
+    # ---------------------------------------------------------
 
     while len(niveles_indentacion) > 1:
         niveles_indentacion.pop()
